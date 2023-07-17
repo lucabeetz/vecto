@@ -69,7 +69,7 @@ class Vecto:
     def _add_image_embedding(self, image: str, uuid: uuid):
         raise NotImplementedError
 
-    def _query_text_embedding(self, text: str) -> dict:
+    def _query_text_embedding(self, text: str, max_results: int = 5) -> list[dict]:
         embedding_fn = embedding_provider_to_function[self.text_embedding_provider]
         embedding = embedding_fn(text)
 
@@ -78,10 +78,12 @@ class Vecto:
             np.linalg.norm(self.text_embeddings) * np.linalg.norm(embedding)
         )
 
-        # find closest embedding
-        closest_embedding = np.argmax(cos_sim)
-        embedding_uuid = self.index_to_uuid[closest_embedding]
-        return self.metadata[embedding_uuid]
+        # find max_results closest embeddings
+        closest_embeddings = np.argsort(cos_sim)[-max_results:]
+        print(f"Closest embeddings: {closest_embeddings}")
+        embeddings_uuid = [self.index_to_uuid[i] for i in closest_embeddings]
+        metadatas = [self.metadata[uuid] for uuid in embeddings_uuid]
+        return metadatas
 
     def _query_image_embedding(self, image: str) -> dict:
         raise NotImplementedError
